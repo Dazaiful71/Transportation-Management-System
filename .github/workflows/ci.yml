@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore "Transportation Management System.sln"
+
+      - name: Build
+        run: dotnet build "Transportation Management System.sln" --configuration Release --no-restore -warnaserror
+
+      - name: Unit tests
+        # Integration tests need a live MySQL database, so they run locally only.
+        run: >
+          dotnet test "Transportation Management System.sln" --configuration Release --no-build
+          --filter "TestCategory!=Integration" --logger "trx;LogFileName=results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/TestResults/*.trx"
+
+      - name: Publish app
+        if: github.event_name == 'push'
+        run: >
+          dotnet publish "Transportation Management System/Transportation Management System.csproj"
+          --configuration Release --runtime win-x64 --self-contained false --output publish
+
+      - name: Upload app
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tms-win-x64
+          path: publish/
