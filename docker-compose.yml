@@ -1,0 +1,28 @@
+# Local MySQL for development: `docker compose up -d`
+# Creates the `tms` database (schema + sample data) and a local `cmp` marketplace.
+# Then copy Transportation Management System/appsettings.local.example.config to
+# appsettings.local.config - its defaults already match this container.
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root-change-me
+      MYSQL_DATABASE: tms
+      MYSQL_USER: tms_app
+      MYSQL_PASSWORD: change-me
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d:ro
+      - ./docker/99_grants.sql:/docker-entrypoint-initdb.d/99_grants.sql:ro
+      - tms-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot-change-me"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tms-data:
