@@ -137,7 +137,7 @@ namespace Transportation_Management_System
             TimeSpan timeInDays = TimeSpan.FromHours(hours);
             double days = timeInDays.TotalDays;
 
-            decimal totalCost = TripManager.CalculateTotalCostTrips(trips);
+            decimal totalCost = TripManager.CalculateTotalCostTrips(trips, orderObj.Quantity);
             string clientName = orderObj.ClientName;
             string origin = orderObj.Origin.ToString();
             string destination = orderObj.Destination.ToString();
@@ -149,6 +149,7 @@ namespace Transportation_Management_System
             invoice.Destination = (City)Enum.Parse(typeof(City), destination, true);
             invoice.Days = Math.Round(days, 1);
             invoice.TotalKM = distance;
+            invoice.PalletQuantity = orderObj.Quantity;
             invoice.CompletedDate = DateTime.Now;
 
             return invoice;

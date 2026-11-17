@@ -41,12 +41,14 @@ namespace Transportation_Management_System
         /// \brief This overloaded Rate class constructor is used to access a Rate class with empty attributes.
         ///
         public Rate()
-        { }
+        {
+            RateValuePair = new Dictionary<RateType, double>();
+        }
 
         ///
         /// \brief This Rate class constructor is used to values to the dictionary as key value pairs.
         ///
-        public Rate(RateType newType, double newValue)
+        public Rate(RateType newType, double newValue) : this()
         {
             RateValuePair.Add(newType, newValue);
         }
