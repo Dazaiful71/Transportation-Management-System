@@ -32,6 +32,8 @@
 
                 <RadioButton x:Name="AllInvoices" Content="All Invoices" HorizontalAlignment="Left" Margin="170,361,0,0" VerticalAlignment="Top" Click="AllInvoices_Click" />
                 <RadioButton x:Name="PastInvoice" Content="Past 2 weeks" HorizontalAlignment="Left" Margin="253,361,0,0" VerticalAlignment="Top" Click="PastInvoices_Click" />
+                <TextBlock x:Name="ReportSummaryText" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="170,381,0,0" Width="470" FontSize="11" Foreground="White" TextTrimming="CharacterEllipsis" />
+                <Button x:Name="ExportCsv" Content="Export CSV" HorizontalAlignment="Left" VerticalAlignment="Top" Width="100" Height="30" Margin="653,358,0,0" Click="ExportCsv_Click" IsEnabled="False" Background="WhiteSmoke" Foreground="DarkBlue" FontSize="16" FontFamily="Bahnschrift SemiCondensed" ToolTip="Save the invoices shown above as a CSV file" />
 
                 <ListView x:Name="ReportList" Margin="145,10,21,61" SelectionMode="Single" SelectionChanged="Selection_Changed" HorizontalAlignment="Center" VerticalAlignment="Center" Height="324" Width="608">
                     <ListView.View>

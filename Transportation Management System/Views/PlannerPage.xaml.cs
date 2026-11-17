@@ -27,6 +27,9 @@ namespace Transportation_Management_System
         //planner object to access Planner class
         private readonly Planner planner = new Planner();
 
+        // Invoices currently shown in the report (used by the CSV export)
+        private List<Invoice> currentInvoices = new List<Invoice>();
+
         ///
         /// \brief This constructor is used to initialize the planner page UI.
         ///
@@ -158,7 +161,47 @@ namespace Transportation_Management_System
                 invoicesList = planner.GenerateSummaryReport(true);
             }
 
-            ReportList.ItemsSource = invoicesList;
+            currentInvoices = invoicesList ?? new List<Invoice>();
+            ReportList.ItemsSource = currentInvoices;
+            ReportSummaryText.Text = ReportService.Summarize(currentInvoices).ToString();
+            ExportCsv.IsEnabled = currentInvoices.Count > 0;
+        }
+
+        ///
+        /// \brief Save the invoices currently shown in the report as a CSV file.
+        ///
+        private void ExportCsv_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentInvoices.Count == 0)
+            {
+                MessageBox.Show("There are no invoices to export.", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export invoice report",
+                Filter = "CSV file (*.csv)|*.csv",
+                DefaultExt = ".csv",
+                FileName = ReportService.SuggestFileName(DateTime.Now, PastInvoice.IsChecked == true)
+            };
+
+            if (dialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            try
+            {
+                System.IO.File.WriteAllText(dialog.FileName, ReportService.BuildInvoiceCsv(currentInvoices), new UTF8Encoding(true));
+                Logger.Log($"Exported {currentInvoices.Count} invoices to {dialog.FileName}", LogLevel.Information);
+                MessageBox.Show($"Saved {currentInvoices.Count} invoices to\n{dialog.FileName}", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"CSV export failed: {ex.Message}", LogLevel.Error);
+                MessageBox.Show($"Could not save the file: {ex.Message}", "Export", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         ///
