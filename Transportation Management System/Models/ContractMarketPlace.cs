@@ -44,11 +44,12 @@ namespace Transportation_Management_System
         ///
         public ContractMarketPlace()
         {
-            CMPServer = "159.89.117.198";
-            Port = 3306;
-            DBName = "cmp";
-            UID = "DevOSHT";
-            Password = "Snodgr4ss!";
+            // Read from configuration so no credentials are compiled into the app.
+            CMPServer = AppSettings.Get("CMPServer");
+            Port = AppSettings.GetInt("CMPPort", 3306);
+            DBName = AppSettings.Get("CMPDatabaseName", "cmp");
+            UID = AppSettings.Get("CMPUser");
+            Password = AppSettings.Get("CMPPassword");
         }
 
         ///
@@ -58,7 +59,7 @@ namespace Transportation_Management_System
         ///
         public override string ToString()
         {
-            return $"SERVER={CMPServer};DATABASE={DBName};PORT={Port};UID={UID};PASSWORD={Password}";
+            return DAL.BuildConnectionString(CMPServer, Port.ToString(), UID, Password, DBName);
         }
 
         ///
@@ -69,6 +70,14 @@ namespace Transportation_Management_System
         public List<Contract> GetContracts()
         {
             List<Contract> contracts = new List<Contract>();
+
+            if (string.IsNullOrEmpty(CMPServer) || string.IsNullOrEmpty(UID))
+            {
+                throw new System.Configuration.ConfigurationErrorsException(
+                    "The Contract Marketplace is not configured. Set CMPServer, CMPUser and CMPPassword in " +
+                    "appsettings.local.config, App.config or the TMS_CMP* environment variables.");
+            }
+
             try
             {
                 string conString = ToString();

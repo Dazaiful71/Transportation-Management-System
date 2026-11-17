@@ -60,15 +60,18 @@ namespace Transportation_Management_System
         {
             try
             {
-                Server = ConfigurationManager.AppSettings.Get("Server");
-                User = ConfigurationManager.AppSettings.Get("User");
-                Port = ConfigurationManager.AppSettings.Get("Port");
-                Password = ConfigurationManager.AppSettings.Get("Password");
-                DatabaseName = ConfigurationManager.AppSettings.Get("DatabaseName");
+                AppSettings.Reload();
+                Server = AppSettings.Get("Server");
+                User = AppSettings.Get("User");
+                Port = AppSettings.Get("Port", "3306");
+                Password = AppSettings.Get("Password");
+                DatabaseName = AppSettings.Get("DatabaseName");
 
-                if (Server == "" || User == "" || Port == "" || Password == "" || DatabaseName == "")
+                if (string.IsNullOrEmpty(Server) || string.IsNullOrEmpty(User) || string.IsNullOrEmpty(DatabaseName))
                 {
-                    throw new Exception("We couldn't retrieve the information about the database. Please check your config file.");
+                    throw new ConfigurationErrorsException(
+                        "The TMS database is not configured. Set Server, User, Password and DatabaseName in " +
+                        "appsettings.local.config, App.config or the TMS_* environment variables.");
                 }
             }
             catch (Exception e)
@@ -120,7 +123,31 @@ namespace Transportation_Management_System
         ///
         public override string ToString()
         {
-            return $"server={Server};user={User};database={DatabaseName};port={Port};password={Password}; convert zero datetime=True";
+            return BuildConnectionString(Server, Port, User, Password, DatabaseName);
+        }
+
+        ///
+        /// \brief Build a MySQL connection string with every value escaped properly.
+        ///
+        /// Using the builder means a password containing ';' or '=' cannot break or extend the string.
+        ///
+        public static string BuildConnectionString(string server, string port, string user, string password, string database)
+        {
+            var builder = new MySqlConnectionStringBuilder
+            {
+                Server = server ?? string.Empty,
+                UserID = user ?? string.Empty,
+                Password = password ?? string.Empty,
+                Database = database ?? string.Empty,
+                ConvertZeroDateTime = true
+            };
+
+            if (uint.TryParse(port, out uint parsedPort))
+            {
+                builder.Port = parsedPort;
+            }
+
+            return builder.ConnectionString;
         }
 
         ///
@@ -139,8 +166,9 @@ namespace Transportation_Management_System
                 conn.Open();
                 try
                 {
-                    string sql = $"SELECT * FROM Users WHERE Username='{userName}'";
+                    const string sql = "SELECT * FROM Users WHERE Username=@Username";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.AddWithValue("@Username", userName);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
                     // If data is found
@@ -185,8 +213,9 @@ namespace Transportation_Management_System
                 conn.Open();
                 try
                 {
-                    string sql = $"SELECT * FROM Users WHERE Username='{userName}'";
+                    const string sql = "SELECT * FROM Users WHERE Username=@Username";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.AddWithValue("@Username", userName);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
                     // If data is found
@@ -230,8 +259,9 @@ namespace Transportation_Management_System
                 conn.Open();
                 try
                 {
-                    string sql = $"SELECT UserType FROM Users WHERE Username='{username}'";
+                    const string sql = "SELECT UserType FROM Users WHERE Username=@Username";
                     MySqlCommand cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.AddWithValue("@Username", username);
                     MySqlDataReader rdr = cmd.ExecuteReader();
 
                     // If data is found
@@ -605,13 +635,8 @@ namespace Transportation_Management_System
                     }
                 }
 
-                // Create the graph
-                foreach (Route route in routeList)
-                {
-                    // If not found (edges), return null
-                    route.WestPtr = routeList.ElementAtOrDefault((int)route.West);
-                    route.EastPtr = routeList.ElementAtOrDefault((int)route.East);
-                }
+                // Create the graph. Neighbours are matched by city, so row order in the table does not matter.
+                TripManager.LinkRoutes(routeList);
             }
             catch (Exception e)
             {
@@ -2051,12 +2076,12 @@ namespace Transportation_Management_System
         public void BackupDatabase(string backUpFilePath)
         {
             string fileName = $"TMS-DB-Backup-{DateTime.Now:MM-dd-yyyy HH-mm-ss}.sql";
-            if (backUpFilePath == "")
+            if (string.IsNullOrWhiteSpace(backUpFilePath))
             {
                 throw new ArgumentNullException("Backup file path was not provided. Backup failed.");
             }
 
-            string fullPath = $"{backUpFilePath}\\{fileName}";
+            string fullPath = System.IO.Path.Combine(backUpFilePath, fileName);
 
             try
             {
