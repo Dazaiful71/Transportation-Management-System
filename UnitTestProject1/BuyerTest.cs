@@ -7,7 +7,9 @@ namespace UnitTestProject1
     /// <summary>
     /// Summary description for BuyerTest
     /// </summary>
+    // Needs a live TMS database (see the database folder and README). Skipped in CI.
     [TestClass]
+    [TestCategory("Integration")]
     public class BuyerTest
     {
         [TestMethod]

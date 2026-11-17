@@ -3,7 +3,9 @@ using Transportation_Management_System;
 
 namespace UnitTestProject1
 {
+    // Needs a live TMS database (see the database folder and README). Skipped in CI.
     [TestClass]
+    [TestCategory("Integration")]
     public class AuthorizationTest
     {
         [TestMethod]
